@@ -94,7 +94,7 @@ Corroborators must be:
 
 ## Dispute protocol
 
-See plan §8.3. Implementation summary:
+Implementation summary:
 
 ```rust
 fn dispute_slashing(
@@ -139,7 +139,7 @@ If watcher's evidence is rejected by panel or auto-validator:
 
 - 1st offense: bond burned (full bond).
 - 2nd offense in 90 days: bond × 10 penalty (stake-bonded if registered as both watcher AND operator) + permanent watcher ban.
-- Malicious / forged evidence: criminal referral per plan §9.
+- Malicious / forged evidence: criminal referral.
 
 ## Transparency
 

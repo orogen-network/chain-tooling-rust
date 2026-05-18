@@ -1,6 +1,6 @@
 # RFC Index — Chain Tooling Specifications
 
-Cross-team integration contracts ratified at end Q3 2026 (per plan §4). All RFCs versioned independently; SCALE on-chain encoding canonical; JSON off-chain. Breaking changes require all-leads sign-off + CI compat-test bump.
+Cross-team integration contracts ratified at end Q3 2026. All RFCs versioned independently; SCALE on-chain encoding canonical; JSON off-chain. Breaking changes require all-leads sign-off + CI compat-test bump.
 
 | # | RFC | Owner | Summary |
 |---|---|---|---|
