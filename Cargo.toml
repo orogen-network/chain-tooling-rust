@@ -1,0 +1,33 @@
+[package]
+name = "mining-cli"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+description = "Admin CLI for the Orogen chain: chain-spec, extrinsics, slash receipts, governance"
+publish = false
+
+[[bin]]
+name = "mining-cli"
+path = "src/main.rs"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+blake2 = "0.10"
+hex = "0.4"
+sha2 = "0.10"
+
+[dev-dependencies]
+tempfile = "3"
+assert_cmd = "2"
+predicates = "3"
