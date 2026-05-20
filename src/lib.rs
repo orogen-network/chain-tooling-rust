@@ -80,8 +80,7 @@ pub fn default_testnet_spec() -> ChainSpec {
 /// attestation reports, etc.). Off-chain tooling must match exactly to
 /// re-derive the same on-chain ids.
 pub fn blake2_256(bytes: &[u8]) -> [u8; 32] {
-    let mut hasher =
-        Blake2bVar::new(32).expect("32 is a valid Blake2b output length");
+    let mut hasher = Blake2bVar::new(32).expect("32 is a valid Blake2b output length");
     hasher.update(bytes);
     let mut out = [0u8; 32];
     hasher
@@ -90,11 +89,10 @@ pub fn blake2_256(bytes: &[u8]) -> [u8; 32] {
     out
 }
 
-/// Verify a slash receipt's signature claims.
+/// Check a slash receipt's format and cosigner-count claims.
 ///
-/// In production this calls into the chain RPC to fetch the validator hotkey.
-/// Here we provide the format-only check; signature verification is a TODO once
-/// subxt is wired.
+/// This intentionally does not perform cryptographic signature verification.
+/// Callers must not treat a successful result as validator authorization.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SlashReceipt {
     pub slash_id: u64,
@@ -105,7 +103,7 @@ pub struct SlashReceipt {
     pub validator_signatures: Vec<(String, String)>,
 }
 
-pub fn verify_slash_format(receipt: &SlashReceipt) -> Result<(), String> {
+pub fn check_slash_format(receipt: &SlashReceipt) -> Result<(), String> {
     if !receipt.fault_code.chars().all(|c| c.is_alphanumeric()) {
         return Err(format!("invalid fault_code: {}", receipt.fault_code));
     }
@@ -113,7 +111,10 @@ pub fn verify_slash_format(receipt: &SlashReceipt) -> Result<(), String> {
         return Err(format!("severity_bps > 10000: {}", receipt.severity_bps));
     }
     if !receipt.evidence_hash.starts_with("0x") || receipt.evidence_hash.len() != 66 {
-        return Err(format!("evidence_hash not 0x-prefixed H256: {}", receipt.evidence_hash));
+        return Err(format!(
+            "evidence_hash not 0x-prefixed H256: {}",
+            receipt.evidence_hash
+        ));
     }
     let need_sigs = match receipt.severity_bps {
         0..=50 => 1,
@@ -189,16 +190,16 @@ mod tests {
             evidence_hash: "0x".to_string() + &"01".repeat(32),
             validator_signatures: vec![],
         };
-        assert!(verify_slash_format(&r).is_err());
+        assert!(check_slash_format(&r).is_err());
         r.severity_bps = 1000;
         // 1000 bps requires 3 signatures
-        assert!(verify_slash_format(&r).is_err());
+        assert!(check_slash_format(&r).is_err());
         r.validator_signatures = vec![
             ("v1".into(), "sig1".into()),
             ("v2".into(), "sig2".into()),
             ("v3".into(), "sig3".into()),
         ];
-        assert!(verify_slash_format(&r).is_ok());
+        assert!(check_slash_format(&r).is_ok());
     }
 
     #[test]
@@ -211,7 +212,7 @@ mod tests {
             evidence_hash: "not-hex".into(),
             validator_signatures: vec![("v1".into(), "sig".into())],
         };
-        assert!(verify_slash_format(&r).is_err());
+        assert!(check_slash_format(&r).is_err());
     }
 
     #[test]
@@ -224,6 +225,6 @@ mod tests {
             evidence_hash: "0x".to_string() + &"01".repeat(32),
             validator_signatures: vec![("v1".into(), "sig".into())],
         };
-        assert!(verify_slash_format(&r).is_err());
+        assert!(check_slash_format(&r).is_err());
     }
 }

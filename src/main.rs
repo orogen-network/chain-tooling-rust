@@ -2,7 +2,7 @@
 //!
 //!     mining-cli chain-spec generate --network mainnet|forge --output spec.json
 //!     mining-cli chain-spec print --network mainnet
-//!     mining-cli slash verify --file receipt.json
+//!     mining-cli slash check-format --file receipt.json
 //!     mining-cli rfc list
 //!     mining-cli rfc check --spec-dir specs/
 
@@ -11,14 +11,10 @@ use std::path::PathBuf;
 
 use anyhow::{anyhow, Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
-use mining_cli::{default_mainnet_spec, default_testnet_spec, verify_slash_format, SlashReceipt};
+use mining_cli::{check_slash_format, default_mainnet_spec, default_testnet_spec, SlashReceipt};
 
 #[derive(Parser)]
-#[command(
-    name = "mining-cli",
-    version,
-    about = "Admin CLI for the Orogen chain"
-)]
+#[command(name = "mining-cli", version, about = "Admin CLI for the Orogen chain")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -61,8 +57,8 @@ enum ChainSpecOp {
 
 #[derive(Subcommand)]
 enum SlashOp {
-    /// Verify the format/cosigner-count of a slash receipt file.
-    Verify {
+    /// Check the JSON format/cosigner-count of a slash receipt file. This does not verify signatures.
+    CheckFormat {
         #[arg(long)]
         file: PathBuf,
     },
@@ -111,23 +107,20 @@ fn main() -> Result<()> {
             }
         },
         Cmd::Slash { op } => match op {
-            SlashOp::Verify { file } => {
-                let bytes = fs::read(&file).with_context(|| format!("reading {}", file.display()))?;
+            SlashOp::CheckFormat { file } => {
+                let bytes =
+                    fs::read(&file).with_context(|| format!("reading {}", file.display()))?;
                 let receipt: SlashReceipt = serde_json::from_slice(&bytes)
                     .with_context(|| format!("parsing {}", file.display()))?;
-                verify_slash_format(&receipt).map_err(|e| anyhow!(e))?;
-                println!("ok");
+                check_slash_format(&receipt).map_err(|e| anyhow!(e))?;
+                println!("format-ok: signatures were not cryptographically verified");
             }
         },
         Cmd::Rfc { op } => match op {
             RfcOp::List { spec_dir } => {
                 let mut entries: Vec<_> = fs::read_dir(&spec_dir)?
                     .filter_map(|e| e.ok())
-                    .filter(|e| {
-                        e.file_name()
-                            .to_string_lossy()
-                            .starts_with("RFC-")
-                    })
+                    .filter(|e| e.file_name().to_string_lossy().starts_with("RFC-"))
                     .collect();
                 entries.sort_by_key(|e| e.file_name());
                 for e in entries {
